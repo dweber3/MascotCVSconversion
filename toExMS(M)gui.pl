@@ -29,7 +29,7 @@ use warnings;
 use Tk;
 
 my $intype = [['Comma Seperated Values', '.csv'], ['All Files', '*.*']];
-my $outtype = [['Comma Seperated Values', '.csv'], ['Text Files', ['.txt', '.text']], ['All Files', '*.*']];
+my $outtype = [['Comma Seperated Values', '.csv'], ['All Files', '*.*']];
 my $infilename = "";
 my $outfilename = "";
 
@@ -42,7 +42,7 @@ if (-e $infilename && -r $infilename)
 	$outfilename = $mw->getSaveFile(-filetypes=>$outtype, -initialfile=>"output");
 	if (-w $outfilename)
 	{
-		if ($outfilename eq "") {$outfilename = "spif.txt";}
+		if ($outfilename eq "") {$outfilename = "out.csv";}
 		#print DEBUG "Output file will be $outfilename\n";
 		open (my $ofh, '>', $outfilename) or die ('Could not open output file ' . $outfilename . '.\n');
 		
