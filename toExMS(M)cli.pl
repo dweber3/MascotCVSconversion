@@ -26,27 +26,28 @@
 ###############################################################################
 use strict;
 use warnings;
+#open (my $DEBUG, '>', "log.txt");
 
 my $infilename = "";
 my $outfilename = "";
-#get $inputfilename
-print "Please enter the input file:\n";
+#get $infilename
+print "Please enter the input file:\t";
 $infilename = <STDIN>;
 chomp $infilename;
+#print $DEBUG "Input file is $infilename.\n";
 if (-e $infilename && -r $infilename)
 {
-	open (my $ifh, '<', $infilename) or die ('Could not open input file ' . $infilename . '.\n');
+	open (my $ifh, '<', $infilename) or print $DEBUG "Could not open input file $infilename.\n";
 	
 	#get $outputfilename
-	print "Please enter the output file:\n";
+	print "Enter desired output filename. If none is entered, file will be 'out.csv'.\t";
 	$outfilename = <STDIN>;
 	chomp $outfilename;
-	if (-w $outfilename)
+	if ($outfilename eq "") {$outfilename = "out.csv";}
+	#print $DEBUG "Output file will be $outfilename.\n";
+	if (open (my $ofh, '>', $outfilename))
 	{
-		if ($outfilename eq "") {$outfilename = "spif.txt";}
-		#print DEBUG "Output file will be $outfilename\n";
-		open (my $ofh, '>', $outfilename) or die ('Could not open output file ' . $outfilename . '.\n');
-		
+		if (!-w $outfilename) {die "Output file $outfilename is not writable.\n";}
 		my (@start_end, @AoR, $RT, @row);
 		my $mode = 0;
 		my $hit = -1;
@@ -128,7 +129,7 @@ if (-e $infilename && -r $infilename)
 
 		close $ofh;
 	}
-	else {die "Output file $outfilename is not writable.\n";}
+	else {print $DEBUG "Could not open output file $outfilename.\n";}
 }
 else
 {
