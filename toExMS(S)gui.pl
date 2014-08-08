@@ -204,6 +204,17 @@ sub pepinfo
 	}
 	
 	@distND = @finalDist(1:(maxND+1));
+	
+	#%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	#%%%calculate maxD:
+	$maxD = size(subSeq,2) - $X;
+	for ($m = ($X + 1); $m < size(subSeq,2); $m ++)
+	{
+		if (subSeq($m)=='P')  #exclude Proline
+		{
+			$maxD = $maxD-1;
+		}
+	}
 }
 
 my $intype = ['Comma Seperated Values', '.csv'];
