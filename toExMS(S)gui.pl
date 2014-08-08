@@ -1,8 +1,8 @@
 #		toExMS(S)gui.pl
 #	
-#	Arranges information in Mascot-exported CVS files to that necessary for
-#	ExMS. Remember to export to .xlsx afterwards! Made to work with Mascot as run by the IBBR as of 2014-07-18.
-#	Mascot claims last update 2010-03-30.
+#	Arranges information in Mascot-exported CVS files into the text files necessary for
+#	ExMS. Assumes that scan title includes the retention time in the for "RT:$time".
+#	Made to work with Mascot as run by the IBBR as of 2014-07-18. Mascot claims last update 2010-03-30.
 #
 #	Based on the pepinfo.m function written as part of the ExMS program by ZhongYuan Kan et. al. at the University of Pennsylvania.
 #	
