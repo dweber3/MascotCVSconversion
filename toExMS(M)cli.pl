@@ -1,4 +1,4 @@
-#		MascotCSVtoExMS.pl
+#		toExMS(M)cli.pl
 #	
 #	Arranges information in Mascot-exported CVS files to that necessary for
 #	ExMS. Remember to export to .xlsx afterwards! Made to work with Mascot as run by the IBBR as of 2014-07-18.
