@@ -29,7 +29,7 @@
 use strict;
 use warnings;
 use Math::BigFloat;
-open (DEBUG, ">log.txt");
+#open (DEBUG, ">log.txt");
 
 sub binopdf
 {
@@ -205,24 +205,25 @@ sub pepinfo
 	@distND = @finalDist(1:(maxND+1));
 }
 
-my $intype = ['Comma Seperated Values', '.csv'];
-my $outtype = ['Text Files', ['.txt', '.text']];
 my $infilename = "", $outfilename = "";
 
-my $mw = new MainWindow;
-
-$infilename = $mw->getOpenFile(-filetypes=>$intype);
+#get $infilename
+print "Please enter the input file:\t";
+$infilename = <STDIN>;
+chomp $infilename;
+#print $DEBUG "Input file is $infilename.\n";
 if (-e $infilename && -r $infilename)
 {
-	print DEBUG "Input file is $infilename\n";
-	open (my ifh, '<', $infilename) or die ('Could not open input file ' . $infilename . '.\n');
-	$outfilename = $mw->getSaveFile(-filetypes=>$outtype, -initialfile=>"spif");
+	open (my $ifh, '<', $infilename) or die "Could not open input file $infilename.\n";
+	#get $outputfilename
+	print "Enter desired output filename. If none is entered, file will be 'out.csv'.\t";
+	$outfilename = <STDIN>;
+	chomp $outfilename;
+	if ($outfilename eq "") {$outfilename = "out.csv";}
+	#print $DEBUG "Output file will be $outfilename.\n";
+	open (my $ofh, '>', $outfilename) or die "Could not open output file $outfilename.\n";
 	if (-w $outfilename)
 	{
-		if ($outfilename eq "") {$outfilename = "spif.txt";}
-		print DEBUG "Output file will be $outfilename\n";
-		open (my ofh, '>', $outfilename) or die ('Could not open output file ' . $outfilename . '.\n');
-		
 		#do all the things to ifh
 		while (<ifh>)
 		{
@@ -251,7 +252,7 @@ if (-e $infilename && -r $infilename)
 	}
 	else
 	{
-		if (!-w $outfilename) {die ("Output file " . $outfilename . " is not writeable.\n";)}
+		die "Output file $outfilename is not writeable.\n";
 	}
 }
 else
@@ -260,4 +261,4 @@ else
 	elsif (-r $infilename) {die ("Input file " . $infilename . " is not readable.\n";)}
 	else {die "This should be unreachable.\n"}
 }
-close DEBUG;
+#close DEBUG;
