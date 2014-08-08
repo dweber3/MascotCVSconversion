@@ -37,30 +37,41 @@ sub binopdf
 
 sub conv
 {
-	#convolution
-	#$_[0] = Array Reference X
-	#$_[1] = Array Reference Y
+	#Convolution
+	#$_[0] = Array Reference K = Kernel
+	#$_[1] = Array Reference D = Data
 	#Returns Array Reference R
-	my @X = @{$_[0]};
-	my @Y = @{$_[1]};
-	my @R;
-	
-	for (my $i = 0; $i < (scalar @X + scalar @Y + 1); $i++)
+	#print "conv($_[0], $_[1])\n";
+	my @K = @{$_[0]};
+	#print "Kernel is @K.\n";
+	my $K = @K;
+	#print "Kernel is $K long.\n";
+	my @D = @{$_[1]};
+	#print "Data is @D.\n";
+	my $D = @D;
+	#print "Data is $D long.\n";
+	my $R = ($K + $D - 1);
+	#print "Result will be $R long.\n";
+	my @R = (0 .. ($R - 1));
+	for (my $i = 0; $i < $R; $i++)
 	{
-		#maths
-		my @N;
-		for (my $j = max (1, ($i + 1 - scalar @Y)); $j < min ($i, scalar @X); $j ++)
+		#outer loop
+		$R[$i] = 0;
+		for (my $j = 0; $j <= $i; $j ++)
 		{
-			push @N, $X[$i]*$Y[$i-$j+1];
+			#inner loop
+			print "\t\t(i, j) are ($i, $j).\n";
+			my $Kj = 0;
+			if ($j < $K) {$Kj = $K[$j];}
+			my $Dij = 0;
+			if (($i - $j) < $D) {$Dij = $D[$i - $j];}
+			$R[$i] += ($Kj * $Dij);
+			print "K[$j] = $Kj. D[$i - $j] = $Dij.\n";
+			print "\t R[$i] = $R[$i].\n";
+			#print "";
 		}
-		my $sum;
-		foreach (@N)
-		{
-			$sum = $sum + $_;
-		}
-		push @R, $sum;
 	}
-	
+	#print "Result is @R.\n";
 	return \@R;
 }
 
