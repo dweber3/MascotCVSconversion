@@ -4,9 +4,13 @@ use Math::BigFloat;
 
 my $S = 'ACDEFGHIK';
 my $X = 2;
-
 my @R = @{pepinfo($S, $X)};
-print "Result is @R.\n";
+#print "Result is @R.\n";
+print "Peptide mass is $R[0].\n";
+my @distND = @{$R[1]};
+print "distND = @distND\n";
+print "maxND = $R[2].\n";
+print "maxD = $R[3].\n";
 
 sub pepinfo
 {
@@ -15,44 +19,65 @@ sub pepinfo
 	#@_[1] = Scalar X = exclude N-terminal X residues (default 2)
 	#Returns Array Reference R
 	#R[0] = Scalar peptideMass
-	#R[1] = Array Reference distND
+	#R[1] = Array Reference distND = ?
 	#R[2] = Scalar maxND  = minimum possible deuterium uptake?
 	#R[3] = Scalar maxD = maximum possible deuterium uptake?
-	if (scalar(@_) < 1) {die "No input to parse.\n"};
-	if (ref(@_[0]) eq '')
-	{
-		if (@_[0] !~ /^[AC-Z]+$/) {die ('No amino acid sequence passed.\n')}
-	}
-	else 
+	my @R;
 	
-	my $subSeq = $_[0];
-	my $peptideMass = 0, $distND, $maxND, $maxD, $C = 0, $N = 0, $O = 0, $S = 0, $Fe = 0, $X = 2, $index, @distO;
+	
+	my $subSeq;
+	if (scalar(@_) < 1) {die "No input to parse.\n"};
+	if (ref($_[0]) eq '')
+	{
+		if ($_[0] !~ /^[AC-Z]+$/) {die ('No amino acid sequence passed.\n')}
+		else {$subSeq = $_[0];}
+	}
+	elsif (ref ($_[0]) eq 'ARRAY')
+	{
+		$subSeq = join ('', @{$_[0]});
+	}
+	
+	my $peptideMass = 0;
+	my $C = 0;
+	my $N = 0;
+	my $O = 0;
+	my $S = 0;
+	my $Fe = 0;
+	my $X = 2;
+	my (@distND, $maxND, $maxD, $index);
 	
 	if (scalar(@_) > 2)
-	{$X = @_[1];}
+	{$X = $_[1];}
 	
 	#following values taken from http://en.wikipedia.org/wiki/Proteinogenic_amino_acid
 	#heme(C34H31N4O4Fe) from http://www.lfd.uci.edu/~gohlke/molmass/?q=C34H31N4O4Fe
 	#acylation(-COCH3)
 	
-	@AAshort		= ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y', '*', ']');
+	my @AAshort		= ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y', '*', ']');
 	
-	@AAcarbonNum	= (  3,   3,   4,   5,   9,   2,   6,   6,   6,   6,   5,   4,  12,   5,   5,   6,   3,   4,   3,   5,  11,   9,  34,   2);
-	@AAnitrogenNum	= (  1,   1,   1,   1,   1,   1,   3,   1,   2,   1,   1,   2,   3,   1,   2,   4,   1,   1,   1,   1,   2,   1,   4,   0);
-	@AAoxygenNum	= (  1,   1,   3,   3,   1,   1,   1,   1,   1,   1,   1,   2,   3,   1,   2,   1,   2,   2,   1,   1,   1,   2,   4,   1);
-	@AAsulfurNum	= (  0,   1,   0,   0,   0,   0,   0,   0,   0,   0,   1,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0);
-	@AAironNum		= (  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   0);
+	my @AAcarbonNum		= (  3,   3,   4,   5,   9,   2,   6,   6,   6,   6,   5,   4,  12,   5,   5,   6,   3,   4,   3,   5,  11,   9,  34,   2);
+	my @AAnitrogenNum	= (  1,   1,   1,   1,   1,   1,   3,   1,   2,   1,   1,   2,   3,   1,   2,   4,   1,   1,   1,   1,   2,   1,   4,   0);
+	my @AAoxygenNum		= (  1,   1,   3,   3,   1,   1,   1,   1,   1,   1,   1,   2,   3,   1,   2,   1,   2,   2,   1,   1,   1,   2,   4,   1);
+	my @AAsulfurNum		= (  0,   1,   0,   0,   0,   0,   0,   0,   0,   0,   1,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0);
+	my @AAironNum		= (  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   0);
 	
-	@AAmonoMass		= (71.03711, 103.00919, 115.02694, 129.04259, 147.06841, 57.02146, 137.05891, 113.08406, 128.09496, 113.08406, 131.04049, 114.04293, 255.15829, 97.05276, 128.05858, 156.10111, 87.03203, 101.04768, 150.95364, 99.06841, 186.07931, 163.06333, 613.1741, 42.0106);
+	my @AAmonoMass		= (71.03711, 103.00919, 115.02694, 129.04259, 147.06841, 57.02146, 137.05891, 113.08406, 128.09496, 113.08406, 131.04049, 114.04293, 255.15829, 97.05276, 128.05858, 156.10111, 87.03203, 101.04768, 150.95364, 99.06841, 186.07931, 163.06333, 613.1741, 42.0106);
 	
-	for (my $i = 0; $i < $#subSeq; $i ++)
+	for (my $i = 0; $i < length($subSeq); $i ++)
 	{
-		++$index until $AAshort[$index] eq substr($subSeq, $i);
+		print "i = $i.\tAA = " . substr($subSeq, $i, 1) . ".\n\n";
+		
+		#++$index until $AAshort[$index] eq substr($subSeq, $i); #WARNING! INFINITE LOOP
+		for ($index = 0; $index < scalar @AAshort && $AAshort[$index] ne substr($subSeq, $i, 1); $index ++)
+		{
+			print "index = $index.\tAA_test = $AAshort[$index].\n";
+		}
+		
 		$peptideMass = $peptideMass + $AAmonoMass[$index];
 		$C = $C + $AAcarbonNum[$index];
 		$N = $N + $AAnitrogenNum[$index];
 		$O = $O + $AAoxygenNum[$index];
-		$S = $S + $AAsulferNum[$index];
+		$S = $S + $AAsulfurNum[$index];
 		$Fe = $Fe + $AAironNum[$index];
 	}
 	
@@ -77,11 +102,11 @@ sub pepinfo
 	my @distO;
 	for (my $i = 0; $i < $O; $i ++)
 	{
-		@distO[$i *2 - 1] = $dist[$i];
+		@distO[$i*2 - 1] = $dist[$i];
 	}
 	
 	# pS33=0.00762; %natural richness of S33 [ignored here]
-	my $pS34=0.04293; %natural richness of S34
+	my $pS34=0.04293; #%natural richness of S34
 	my @distS;
 	if ($S>0)
 	{
@@ -89,21 +114,22 @@ sub pepinfo
 		@dist = @{binopdf(\@SA,$S,$pS34)};
 		for (my $i=0; $i < $S; $i++)
 		{
-			@distS[$i*2-1]=@dist($i);
+			$index = $i * 2 - 1;
+			$distS[$index] = $dist[$i];
 		}
     }
-	else {@distS=1;}
+	else {@distS = 1;}
 	
 	my $pFe56=0.91754; #natural richness of Fe56
 	my $pFe57=0.02119; #natural richness of Fe57
 	my @distFe;
-	if (Fe>0)
+	if ($Fe>0)
 	{
-		my @FA = (0..$Fe)
+		my @FA = (0 .. $Fe);
 		@dist = @{binopdf(\@FA,$Fe,$pFe56)}; #//this calc is considering from Fe54 (natural richness 0.05845)
 		for (my $i = 1; $i < $Fe; $i++)
 		{
-			@distFe[i*2-1]=@dist[$i];
+			@distFe[$i*2 - 1] = $dist[$i];
 		}
 		@distFe = @{conv(\@distFe, binopdf(\@FA, $Fe, $pFe57))};
 	}
@@ -114,7 +140,7 @@ sub pepinfo
 	
 	my @finalDist = @{conv(\@distFe, conv(\@distS, conv(\@distO, conv(\@distC, \@distN))))};
 	
-	$maxND=size(finalDist,2)-1;
+	$maxND = @finalDist - 1;
 	for (my $i = 3; $i < $maxND; $i++)
 	{
 		if ($finalDist[$i] < $obsCThreshold && $finalDist[$i-1] < $obsCThreshold && $finalDist[$i-2] >= $obsCThreshold)
@@ -124,18 +150,24 @@ sub pepinfo
 		}
 	}
 	
-	@distND = @finalDist(1:(maxND+1));
+	for (my $i = 0; $i < $maxND; $i++)
+	{
+		$distND[$i] = $finalDist[$i];
+	}
 	
 	#%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	#%%%calculate maxD:
-	$maxD = size(subSeq,2) - $X;
-	for ($m = ($X + 1); $m < size(subSeq,2); $m ++)
+	$maxD = $subSeq - $X;
+	for (my $i = $X; $i < length ($subSeq); $i ++)
 	{
-		if (subSeq($m)=='P')  #exclude Proline
+		if (substr($subSeq, $i) eq 'P')  #exclude Proline
 		{
-			$maxD = $maxD-1;
+			$maxD--;
 		}
 	}
+	
+	@R = ($peptideMass, \@distND, $maxND, $maxD);
+	return \@R;
 }
 
 sub conv
