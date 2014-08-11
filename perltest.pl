@@ -65,13 +65,14 @@ sub pepinfo
 	
 	for (my $i = 0; $i < length($subSeq); $i ++)
 	{
-		print "i = $i.\tAA = " . substr($subSeq, $i, 1) . ".\n\n";
-		
-		#++$index until $AAshort[$index] eq substr($subSeq, $i); #WARNING! INFINITE LOOP
+		#print "\ni = $i.\tAA = " . substr($subSeq, $i, 1) . ".\n";
+		$index = 0;
+		++$index until $AAshort[$index] eq substr($subSeq, $i, 1);
 		for ($index = 0; $index < scalar @AAshort && $AAshort[$index] ne substr($subSeq, $i, 1); $index ++)
 		{
-			print "index = $index.\tAA_test = $AAshort[$index].\n";
+			#print "index = $index.\tAA_test = $AAshort[$index].\n";
 		}
+		#print "Matched AA = $AAshort[$index].\n\n";
 		
 		$peptideMass = $peptideMass + $AAmonoMass[$index];
 		$C = $C + $AAcarbonNum[$index];
@@ -89,47 +90,51 @@ sub pepinfo
 	my $pC13 = 0.0111; #natural richness of C13
 	my @CA = (0 .. $C);
 	my @distC = @{binopdf(\@CA, $C, $pC13)}; #originally called MATLAB function binopdf(), now calls binopdf() implemented above
+	print "distC:\n@distC\n\n";
 	
 	
 	my $pN15 = 0.00364; #natural richness of N15
 	my @NA = (0 .. $N);
 	my @distN= @{binopdf(\@NA, $N, $pN15)};
-
+	print "distN:\n@distN\n\n";
 	
 	my $pO18 = 0.00205; #natural richness of O18
 	my @OA = (0 .. $O);
 	my @dist = @{binopdf(\@OA, $O, $pO18)};
-	my @distO;
+	my @distO = (0) x ($O * 2);
+	print "distO before:\n@distO\n\n";
 	for (my $i = 0; $i < $O; $i ++)
 	{
-		@distO[$i*2 - 1] = $dist[$i];
+		@distO[($i + 1)*2 - 1] = $dist[$i];
 	}
+	print "distO after:\n@distO\n\n";
 	
 	# pS33=0.00762; %natural richness of S33 [ignored here]
 	my $pS34=0.04293; #%natural richness of S34
-	my @distS;
+	my @distS = (0) x ($S * 2);
 	if ($S>0)
 	{
 		my @SA = (0 .. $S);
 		@dist = @{binopdf(\@SA,$S,$pS34)};
 		for (my $i=0; $i < $S; $i++)
 		{
-			$index = $i * 2 - 1;
+			$index = ($i + 1) * 2 - 1;
 			$distS[$index] = $dist[$i];
 		}
     }
 	else {@distS = 1;}
+	print "distS:\n@distS\n\n";
 	
 	my $pFe56=0.91754; #natural richness of Fe56
 	my $pFe57=0.02119; #natural richness of Fe57
-	my @distFe;
+	my @distFe = (0) x ($Fe * 2);
 	if ($Fe>0)
 	{
 		my @FA = (0 .. $Fe);
 		@dist = @{binopdf(\@FA,$Fe,$pFe56)}; #//this calc is considering from Fe54 (natural richness 0.05845)
 		for (my $i = 1; $i < $Fe; $i++)
 		{
-			@distFe[$i*2 - 1] = $dist[$i];
+			@distFe[($i + 1)*2 - 1] = $dist[$i];
 		}
 		@distFe = @{conv(\@distFe, binopdf(\@FA, $Fe, $pFe57))};
 	}
@@ -137,6 +142,8 @@ sub pepinfo
 	{
 		@distFe=1;
 	}
+	print "distFe:\n@distFe\n\n";
+	
 	
 	my @finalDist = @{conv(\@distFe, conv(\@distS, conv(\@distO, conv(\@distC, \@distN))))};
 	
@@ -157,7 +164,7 @@ sub pepinfo
 	
 	#%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	#%%%calculate maxD:
-	$maxD = $subSeq - $X;
+	$maxD = length ($subSeq) - $X;
 	for (my $i = $X; $i < length ($subSeq); $i ++)
 	{
 		if (substr($subSeq, $i) eq 'P')  #exclude Proline
@@ -195,22 +202,22 @@ sub conv
 		for (my $j = 0; $j <= $i; $j ++)
 		{
 			#inner loop
-			print "\t\t(i, j) are ($i, $j).\n";
+			#print "\t\t(i, j) are ($i, $j).\n";
 			my $Kj = 0;
 			if ($j < $K) {$Kj = $K[$j];}
 			my $Dij = 0;
 			if (($i - $j) < $D) {$Dij = $D[$i - $j];}
 			$R[$i] += ($Kj * $Dij);
-			print "K[$j] = $Kj. D[$i - $j] = $Dij.\n";
-			print "\t R[$i] = $R[$i].\n";
+			#print "K[$j] = $Kj. D[$i - $j] = $Dij.\n";
+			#print "\t R[$i] = $R[$i].\n";
 			#print "";
 		}
 	}
-	#print "Result is @R.\n";
+	#print "Result is @R.\n\n";
 	return \@R;
 }
 
-sub Abinopdf
+sub binopdf
 {
 		#binary probability density function
 		#$_[0] = Array Reference X = List of target numbers
@@ -224,7 +231,7 @@ sub Abinopdf
 	my $P = Math::BigFloat->new($_[2]);
 	my $Q = Math::BigFloat->new(1);
 	$Q = $Q->bsub($P);
-	print "\n\t\tSubroutine Input Array:\n\n\t@X\n";
+	#print "\n\t\tSubroutine Input Array:\n\n\t@X\n";
 	my @R = @X;
 	
 	foreach(@R)
@@ -236,11 +243,11 @@ sub Abinopdf
 		$_ = Math::BigFloat->new(($N->bnok($_))->bmul($PX))->bmul($QNX);
 	}
 	
-	print "\n\t\tSubroutine Output Array:\n\n\t@R\n";
+	#print "\n\t\tSubroutine Output Array:\n\n\t@R\n";
 	return \@R;
 }
 
-sub Sbinopdf
+sub testbinopdf
 {
 		#binomial probability density function
 		#$_[0] = Scalar X = Target number
