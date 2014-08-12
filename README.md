@@ -1,6 +1,9 @@
 #MascotCVSconversion
 ===================
 
+##perltest.pl
+Meant as an internal place to develop subroutines before copying them to scripts that actually put them to use. Always assume that it is less stable than property on top of a currently active volcano.
+
 Dependencies: | Required by: | Where to find them:
 --- | --- | ---
 Perl | All Perl scripts | http://www.perl.org/
@@ -76,5 +79,7 @@ Arranges information in Mascot-exported CVS files to that necessary for	ExMS. Re
 	'''
 
 ExMS is available here: http://hx2.med.upenn.edu/download.html
+Copyright 2009-2013 University of Pennsylvania
 
 MSS is located here: http://structurems.ucalgary.ca/software/
+

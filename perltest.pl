@@ -2,13 +2,12 @@ use strict;
 use warnings;
 use Math::BigFloat;
 
-my $S = 'ACDEFGHIK';
+my $S = 'ADDDA';
 my $X = 2;
 my @R = @{pepinfo($S, $X)};
 #print "Result is @R.\n";
 print "Peptide mass is $R[0].\n";
-my @distND = @{$R[1]};
-print "distND = @distND\n";
+print "distND = @{$R[1]}.\n";
 print "maxND = $R[2].\n";
 print "maxD = $R[3].\n";
 
@@ -19,7 +18,7 @@ sub pepinfo
 	#@_[1] = Scalar X = exclude N-terminal X residues (default 2)
 	#Returns Array Reference R
 	#R[0] = Scalar peptideMass
-	#R[1] = Array Reference distND = ?
+	#R[1] = Array Reference Reference distND = ?
 	#R[2] = Scalar maxND  = minimum possible deuterium uptake?
 	#R[3] = Scalar maxD = maximum possible deuterium uptake?
 	my @R;
@@ -90,24 +89,24 @@ sub pepinfo
 	my $pC13 = 0.0111; #natural richness of C13
 	my @CA = (0 .. $C);
 	my @distC = @{binopdf(\@CA, $C, $pC13)}; #originally called MATLAB function binopdf(), now calls binopdf() implemented above
-	print "distC:\n@distC\n\n";
+	#print "distC:\n@distC\n\n";
 	
 	
 	my $pN15 = 0.00364; #natural richness of N15
 	my @NA = (0 .. $N);
 	my @distN= @{binopdf(\@NA, $N, $pN15)};
-	print "distN:\n@distN\n\n";
+	#print "distN:\n@distN\n\n";
 	
 	my $pO18 = 0.00205; #natural richness of O18
 	my @OA = (0 .. $O);
 	my @dist = @{binopdf(\@OA, $O, $pO18)};
 	my @distO = (0) x ($O * 2);
-	print "distO before:\n@distO\n\n";
+	#print "distO before:\n@distO\n\n";
 	for (my $i = 0; $i < $O; $i ++)
 	{
 		@distO[($i + 1)*2 - 1] = $dist[$i];
 	}
-	print "distO after:\n@distO\n\n";
+	#print "distO after:\n@distO\n\n";
 	
 	# pS33=0.00762; %natural richness of S33 [ignored here]
 	my $pS34=0.04293; #%natural richness of S34
@@ -123,7 +122,7 @@ sub pepinfo
 		}
     }
 	else {@distS = 1;}
-	print "distS:\n@distS\n\n";
+	#print "distS:\n@distS\n\n";
 	
 	my $pFe56=0.91754; #natural richness of Fe56
 	my $pFe57=0.02119; #natural richness of Fe57
@@ -142,17 +141,29 @@ sub pepinfo
 	{
 		@distFe=1;
 	}
-	print "distFe:\n@distFe\n\n";
+	#print "distFe:\n@distFe\n\n";
+	
+	my @interDist = @{conv(\@distC, \@distN)};
+	print "\tconv(distC, distN):\n@interDist\n\n";
+	
+	@interDist = @{conv(\@distO, \@interDist)};
+	print "\tconv(distO, interDist):\n@interDist\n\n";
+	
+	@interDist = @{conv(\@distS, \@interDist)};
+	print "\tconv(distS, interDist):\n@interDist\n\n";
+	
+	@interDist = @{conv(\@distFe, \@interDist)};
+	print "\tconv(distFe, interDist):\n@interDist\n\n";
+	my @finalDist = @interDist;
 	
 	
-	my @finalDist = @{conv(\@distFe, conv(\@distS, conv(\@distO, conv(\@distC, \@distN))))};
 	
-	$maxND = @finalDist - 1;
-	for (my $i = 3; $i < $maxND; $i++)
+	$maxND = scalar @finalDist - 1;
+	for (my $i = 2; $i < $maxND; $i++)
 	{
-		if ($finalDist[$i] < $obsCThreshold && $finalDist[$i-1] < $obsCThreshold && $finalDist[$i-2] >= $obsCThreshold)
+		if ($finalDist[$i] < $obsCThreshold && $finalDist[$i - 1] < $obsCThreshold && $finalDist[$i - 2] >= $obsCThreshold)
 		{
-			$maxND = $i - 3;
+			$maxND = $i - 2;
 			last;
 		}
 	}
