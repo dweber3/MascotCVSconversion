@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Math::BigFloat;
 
-my $S = 'CDCCDC';
+my $S = 'MONOCATISACAT';
 my $X = 2;
 
 #print "Testing binopdf:\n";
