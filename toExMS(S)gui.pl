@@ -308,7 +308,8 @@ sub pepinfo
 
 my $intype = ['Comma Seperated Values', '.csv'];
 my $outtype = ['Text Files', ['.txt', '.text']];
-my $infilename = "", $outfilename = "";
+my $infilename = "";
+my $outfilename = "";
 
 my $mw = new MainWindow;
 
@@ -316,21 +317,21 @@ $infilename = $mw->getOpenFile(-filetypes=>$intype);
 if (-e $infilename && -r $infilename)
 {
 	print DEBUG "Input file is $infilename\n";
-	open (my ifh, '<', $infilename) or die ('Could not open input file ' . $infilename . '.\n');
+	open (IFH, '<', $infilename) or die ('Could not open input file ' . $infilename . '.\n');
 	$outfilename = $mw->getSaveFile(-filetypes=>$outtype, -initialfile=>"spif");
 	if (-w $outfilename)
 	{
 		if ($outfilename eq "") {$outfilename = "spif.txt";}
 		print DEBUG "Output file will be $outfilename\n";
-		open (my ofh, '>', $outfilename) or die ('Could not open output file ' . $outfilename . '.\n');
+		open (OFH, '>', $outfilename) or die ('Could not open output file ' . $outfilename . '.\n');
 		
-		#do all the things to ifh
-		while (<ifh>)
+		#do all the things to IFH
+		while (<IFH>)
 		{
 			#do all the things to $_
 			if ($_ =~ m/^\d.+$/)	#as long as $_ has data
 			{
-				my $start, $end, $z, $mz, $maxND, $maxD, $rt, $score, $delta, @distND, $seq, $title;
+				my ($start, $end, $z, $mz, $maxND, $maxD, $rt, $score, $delta, @distND, $seq, $title);
 				#match variables to $_
 				/(?:[^,]+,){6}(<mz>?[^,]+),(<z>?[^,]+),(?:[^,]+),(<delta>?[^,]+),(<start>?[^,]+),(<end>?[^,]+),(<score>?[^,]+),(?:[^,]+,)(<seq>?[^,]+),(?:[^,]+,)(<title>?[^,]+)/;
 				$start = \g{start};
@@ -346,19 +347,19 @@ if (-e $infilename && -r $infilename)
 				#call pepinfo
 				&pepinfo($seq, \$maxND, \$maxD, \@distND);
 				#print output to ofh
-				print ofh, ($start . '\t' . $end . '\t' . $z . '\t' . $mz . '\t' . $maxND . '\t' . $maxD . '\t' . $rt . '\t' . $score . '\t' . $delta . '\t' . @distND . '\n');
+				print OFH ($start . '\t' . $end . '\t' . $z . '\t' . $mz . '\t' . $maxND . '\t' . $maxD . '\t' . $rt . '\t' . $score . '\t' . $delta . '\t' . @distND . '\n');
 			}
 		}	
 	}
 	else
 	{
-		if (!-w $outfilename) {die ("Output file " . $outfilename . " is not writeable.\n";)}
+		if (!-w $outfilename) {die ("Output file $outfilename is not writeable.\n";)}
 	}
 }
 else
 {
-	if (-e $infilename) {die ("Input file " . $infilename . " does not exist.\n";)}
-	elsif (-r $infilename) {die ("Input file " . $infilename . " is not readable.\n";)}
+	if (-e $infilename) {die ("Input file $infilename does not exist.\n";)}
+	elsif (-r $infilename) {die ("Input file $infilename is not readable.\n";)}
 	else {die "This should be unreachable.\n"}
 }
 close DEBUG;

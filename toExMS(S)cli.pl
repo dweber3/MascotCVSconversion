@@ -305,7 +305,8 @@ sub pepinfo
 	return \@R;
 }
 
-my $infilename = "", $outfilename = "";
+my $infilename = "";
+my $outfilename = "";
 
 #get $infilename
 print "Please enter the input file:\t";
@@ -314,23 +315,23 @@ chomp $infilename;
 #print $DEBUG "Input file is $infilename.\n";
 if (-e $infilename && -r $infilename)
 {
-	open (my $ifh, '<', $infilename) or die "Could not open input file $infilename.\n";
+	open (IFH, '<', $infilename) or die "Could not open input file $infilename.\n";
 	#get $outputfilename
 	print "Enter desired output filename. If none is entered, file will be 'out.csv'.\t";
 	$outfilename = <STDIN>;
 	chomp $outfilename;
 	if ($outfilename eq "") {$outfilename = "out.csv";}
 	#print $DEBUG "Output file will be $outfilename.\n";
-	open (my $ofh, '>', $outfilename) or die "Could not open output file $outfilename.\n";
+	open (OFH, '>', $outfilename) or die "Could not open output file $outfilename.\n";
 	if (-w $outfilename)
 	{
 		#do all the things to ifh
-		while (<ifh>)
+		while (<IFH>)
 		{
 			#do all the things to $_
 			if ($_ =~ m/^\d.+$/)	#as long as $_ has data
 			{
-				my $start, $end, $z, $mz, $maxND, $maxD, $rt, $score, $delta, @distND, $seq, $title;
+				my ($start, $end, $z, $mz, $maxND, $maxD, $rt, $score, $delta, @distND, $seq, $title);
 				#match variables to $_
 				/(?:[^,]+,){6}(<mz>?[^,]+),(<z>?[^,]+),(?:[^,]+),(<delta>?[^,]+),(<start>?[^,]+),(<end>?[^,]+),(<score>?[^,]+),(?:[^,]+,)(<seq>?[^,]+),(?:[^,]+,)(<title>?[^,]+)/;
 				$start = \g{start};
@@ -345,8 +346,8 @@ if (-e $infilename && -r $infilename)
 				$rt = \g{rt};
 				#call pepinfo
 				&pepinfo($seq, \$maxND, \$maxD, \@distND);
-				#print output to ofh
-				print ofh, ($start . '\t' . $end . '\t' . $z . '\t' . $mz . '\t' . $maxND . '\t' . $maxD . '\t' . $rt . '\t' . $score . '\t' . $delta . '\t' . @distND . '\n');
+				#print output to OFH
+				print OFH, ($start . '\t' . $end . '\t' . $z . '\t' . $mz . '\t' . $maxND . '\t' . $maxD . '\t' . $rt . '\t' . $score . '\t' . $delta . '\t' . @distND . '\n');
 			}
 		}	
 	}
@@ -357,8 +358,8 @@ if (-e $infilename && -r $infilename)
 }
 else
 {
-	if (-e $infilename) {die ("Input file " . $infilename . " does not exist.\n";)}
-	elsif (-r $infilename) {die ("Input file " . $infilename . " is not readable.\n";)}
+	if (-e $infilename) {die ("Input file $infilename does not exist.\n";)}
+	elsif (-r $infilename) {die ("Input file $infilename is not readable.\n";)}
 	else {die "This should be unreachable.\n"}
 }
 #close DEBUG;
