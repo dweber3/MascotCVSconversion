@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Math::BigFloat;
 
-my $S = 'ACDCA';
+my $S = 'CDCCDC';
 my $X = 2;
 
 #print "Testing binopdf:\n";
@@ -121,7 +121,7 @@ sub pepinfo
 	{
 		@distO[($i + 1)*2 - 2] = $dist[$i];
 	}
-	print "distO after:\n@distO\n\n";
+	#print "distO after:\n@distO\n\n";
 	
 	# pS33=0.00762; %natural richness of S33 [ignored here]
 	my $pS34=0.04293; #%natural richness of S34
@@ -177,17 +177,24 @@ sub pepinfo
 	
 	#print "finalDist size: " . (scalar @finalDist) . "\n";
 	$maxND = (scalar @finalDist) - 1;
+	
+	#original pepinfo.m loop to identify maxND.
+	#for m=3:(maxND+1)
+		#if finalDist(m)<obsCThreshold && finalDist(m-1)<obsCThreshold && finalDist(m-2)>=obsCThreshold
+			#maxND=m-3; break
+		#end
+	#end
 	for (my $i = 2; $i < $maxND; $i++)
 	{
-		#print "\t> $finalDist[$i]\t> " . $finalDist[$i-1] . "\t< " . $finalDist[$i-2] . "\n";
+		#print "$obsCThreshold\t> $finalDist[$i]\t> " . $finalDist[$i-1] . "\t< " . $finalDist[$i-2] . "\n";
 		if ($finalDist[$i] < $obsCThreshold && $finalDist[$i - 1] < $obsCThreshold && $finalDist[$i - 2] >= $obsCThreshold)
 		{
-			$maxND = $i;
+			$maxND = $i - 2;
 			last;
 		}
 	}
 	
-	for (my $i = 0; $i < $maxND; $i++)
+	for (my $i = 0; $i <= $maxND; $i++)
 	{
 		$distND[$i] = $finalDist[$i];
 	}

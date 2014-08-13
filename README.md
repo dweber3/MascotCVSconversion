@@ -2,8 +2,10 @@
 ===================
 
 ##perltest.pl
+###Warning: Permanently unstable!
 Meant as an internal place to develop subroutines before copying them to scripts that actually put them to use. Always assume that it is less stable than property on top of a currently active volcano.
 
+##Useful scripts:
 Dependencies: | Required by: | Where to find them:
 --- | --- | ---
 Perl | All Perl scripts | http://www.perl.org/
