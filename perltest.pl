@@ -2,13 +2,25 @@ use strict;
 use warnings;
 use Math::BigFloat;
 
-my $S = 'ADDDA';
+my $S = 'ACDCA';
 my $X = 2;
+
+#print "Testing binopdf:\n";
+#my @X = (0..16);
+#my $N = 16;
+#my $p = .0111;
+#my @R = @{binopdf(\@X, $N, $p)};
+#print "@R\n";
+
 my @R = @{pepinfo($S, $X)};
-#print "Result is @R.\n";
+print "\n\n\tResults:\n\n";
 print "Peptide mass is $R[0].\n";
-print "distND = @{$R[1]}.\n";
-print "maxND = $R[2].\n";
+print "distND:\n";
+foreach (@{$R[1]})
+{
+	printf("%6f\t", $_);
+}
+print "\nmaxND = $R[2].\n";
 print "maxD = $R[3].\n";
 
 sub pepinfo
@@ -87,9 +99,12 @@ sub pepinfo
 	my $obsCThreshold = 1e-3; #set threshold
 	
 	my $pC13 = 0.0111; #natural richness of C13
+	#print "pC13 = $pC13.\n";
 	my @CA = (0 .. $C);
+	#print "CA:\n@CA\n";
 	my @distC = @{binopdf(\@CA, $C, $pC13)}; #originally called MATLAB function binopdf(), now calls binopdf() implemented above
-	#print "distC:\n@distC\n\n";
+	#print "distC:\n";
+	#printf "%6f " x @distC . "\n", @distC;
 	
 	
 	my $pN15 = 0.00364; #natural richness of N15
@@ -104,9 +119,9 @@ sub pepinfo
 	#print "distO before:\n@distO\n\n";
 	for (my $i = 0; $i < $O; $i ++)
 	{
-		@distO[($i + 1)*2 - 1] = $dist[$i];
+		@distO[($i + 1)*2 - 2] = $dist[$i];
 	}
-	#print "distO after:\n@distO\n\n";
+	print "distO after:\n@distO\n\n";
 	
 	# pS33=0.00762; %natural richness of S33 [ignored here]
 	my $pS34=0.04293; #%natural richness of S34
@@ -117,7 +132,7 @@ sub pepinfo
 		@dist = @{binopdf(\@SA,$S,$pS34)};
 		for (my $i=0; $i < $S; $i++)
 		{
-			$index = ($i + 1) * 2 - 1;
+			$index = ($i + 1) * 2 - 2;
 			$distS[$index] = $dist[$i];
 		}
     }
@@ -133,7 +148,7 @@ sub pepinfo
 		@dist = @{binopdf(\@FA,$Fe,$pFe56)}; #//this calc is considering from Fe54 (natural richness 0.05845)
 		for (my $i = 1; $i < $Fe; $i++)
 		{
-			@distFe[($i + 1)*2 - 1] = $dist[$i];
+			@distFe[($i + 1)*2 - 2] = $dist[$i];
 		}
 		@distFe = @{conv(\@distFe, binopdf(\@FA, $Fe, $pFe57))};
 	}
@@ -144,26 +159,30 @@ sub pepinfo
 	#print "distFe:\n@distFe\n\n";
 	
 	my @interDist = @{conv(\@distC, \@distN)};
-	print "\tconv(distC, distN):\n@interDist\n\n";
+	#print "\tconv(distC, distN):\n";
+	#printf "%6f " x @interDist . "\n", @interDist;
 	
 	@interDist = @{conv(\@distO, \@interDist)};
-	print "\tconv(distO, interDist):\n@interDist\n\n";
+	#print "\tconv(distO, interDist):\n";
+	#printf "%6f " x @interDist . "\n", @interDist;
 	
 	@interDist = @{conv(\@distS, \@interDist)};
-	print "\tconv(distS, interDist):\n@interDist\n\n";
+	#print "\tconv(distS, interDist):\n";
+	#printf "%6f " x @interDist . "\n", @interDist;
 	
 	@interDist = @{conv(\@distFe, \@interDist)};
-	print "\tconv(distFe, interDist):\n@interDist\n\n";
+	#print "\tconv(distFe, interDist):\n";
+	#printf "%6f " x @interDist . "\n", @interDist;
 	my @finalDist = @interDist;
 	
-	
-	
-	$maxND = scalar @finalDist - 1;
+	#print "finalDist size: " . (scalar @finalDist) . "\n";
+	$maxND = (scalar @finalDist) - 1;
 	for (my $i = 2; $i < $maxND; $i++)
 	{
+		#print "\t> $finalDist[$i]\t> " . $finalDist[$i-1] . "\t< " . $finalDist[$i-2] . "\n";
 		if ($finalDist[$i] < $obsCThreshold && $finalDist[$i - 1] < $obsCThreshold && $finalDist[$i - 2] >= $obsCThreshold)
 		{
-			$maxND = $i - 2;
+			$maxND = $i;
 			last;
 		}
 	}
@@ -238,23 +257,36 @@ sub binopdf
 	
 	#array dereferencing here
 	my @X = @{$_[0]};
-	my $N = Math::BigFloat->new($_[1]);
-	my $P = Math::BigFloat->new($_[2]);
-	my $Q = Math::BigFloat->new(1);
-	$Q = $Q->bsub($P);
+	my $N = new Math::BigFloat $_[1];
+	my $P = new Math::BigFloat $_[2];
+	my $Q = new Math::BigFloat '1';
+	#my $N = Math::BigFloat->new($_[1]);
+	#my $P = Math::BigFloat->new($_[2]);
+	#my $Q = Math::BigFloat->new(1);
+	$Q -= $P;
 	#print "\n\t\tSubroutine Input Array:\n\n\t@X\n";
 	my @R = @X;
 	
+	#print "Format: X\tN\tP\tQ\tPX\tNX\tQNX\n\n";
 	foreach(@R)
 	{
 		#do maths on $_
-		my $PX = $P->copy()->bpow($_);
-		my $NX = $N->bsub($_);
-		my $QNX = $Q->bpow($NX);
-		$_ = Math::BigFloat->new(($N->bnok($_))->bmul($PX))->bmul($QNX);
+		#printf ("\tRun:\nState = (%6f, %6f, %6f, %6f)\n", $_, $N, $P, $Q);
+		#my $PX = $P->bpow($_);
+		my $PX = $P ** $_;
+		#printf ("PX:\nState = (%6f, %6f, %6f, %6f, %6f)\n", $_, $N, $P, $Q, $PX);
+		#my $NX = $N->bsub($_);
+		my $NX = $N - $_;
+		#printf ("NX:\nState = (%6f, %6f, %6f, %6f, %6f, %6f)\n", $_, $N, $P, $Q, $PX, $NX);
+		#my $QNX = $Q->bpow($NX);
+		my $QNX = $Q ** $NX;
+		#printf ("QNX:\nState = (%6f, %6f, %6f, %6f, %6f, %6f, %6f)\n", $_, $N, $P, $Q, $PX, $NX, $QNX);
+		$_ = Math::BigFloat->new(($N->copy()->bnok($_))->bmul($PX))->bmul($QNX);
+		#printf ("\n\tResult computed, \$_ = %6f\n\n", $_);
 	}
 	
-	#print "\n\t\tSubroutine Output Array:\n\n\t@R\n";
+	#print "\n\t\tSubroutine Output Array:\n";
+	#printf "%6f " x @R . "\n", @R;
 	return \@R;
 }
 
