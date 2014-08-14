@@ -80,7 +80,7 @@ sub conv
 	#$_[0] = Array Reference K = Kernel
 	#$_[1] = Array Reference D = Data
 	#Returns Array Reference R
-	#print "conv($_[0], $_[1])\n";
+	#print "\t\tconv($_[0], $_[1])\n";
 	my @K = @{$_[0]};
 	#print "Kernel is @K.\n";
 	my $K = @K;
@@ -138,6 +138,7 @@ sub pepinfo
 	{
 		$subSeq = join ('', @{$_[0]});
 	}
+	#print "\tpepinfo($subSeq, 2)\n";
 	
 	my $peptideMass = 0;
 	my $C = 0;
@@ -317,10 +318,10 @@ if (-e $infilename && -r $infilename)
 {
 	open (IFH, '<', $infilename) or die "Could not open input file $infilename.\n";
 	#get $outputfilename
-	print "Enter desired output filename. If none is entered, file will be 'out.csv'.\t";
+	print "Enter desired output filename. If none is entered, file will be `out.txt'.\t";
 	$outfilename = <STDIN>;
 	chomp $outfilename;
-	if ($outfilename eq "") {$outfilename = "out.csv";}
+	if ($outfilename eq "") {$outfilename = "out.txt";}
 	#print $DEBUG "Output file will be $outfilename.\n";
 	open (OFH, '>', $outfilename) or die "Could not open output file $outfilename.\n";
 	if (-w $outfilename)
@@ -359,7 +360,7 @@ if (-e $infilename && -r $infilename)
 				my @pepinfo = @{pepinfo($row[$seq], 2)};
 				if ($row[$scan] =~ /.*RT:(\d+(?:\.\d+)).*/) {$rt = $1;}
 				chomp($row[$scan]);
-				my $R = $row[$start] . '\t' . $row[$end] . '\t' . $row[$z] . '\t' . $row[$mz] . '\t' . $pepinfo[2] . '\t' . $pepinfo[3] . 't' . $rt . '\t' . $row[$score] . '\t' . $row[$delta] . '\t';
+				my $R = $row[$start] . "\t" . $row[$end] . "\t" . $row[$z] . "\t" . $row[$mz] . "\t" . $pepinfo[2] . "\t" . $pepinfo[3] . "\t" . $rt . "\t" . $row[$score] . "\t" . $row[$delta] . "\t";
 				foreach (@{$pepinfo[1]})
 				{
 					$R = $R . $_ . "\t";
