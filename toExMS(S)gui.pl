@@ -100,14 +100,14 @@ sub conv
 		for (my $j = 0; $j <= $i; $j ++)
 		{
 			#inner loop
-			print "\t\t(i, j) are ($i, $j).\n";
+			#print "\t\t(i, j) are ($i, $j).\n";
 			my $Kj = 0;
 			if ($j < $K) {$Kj = $K[$j];}
 			my $Dij = 0;
 			if (($i - $j) < $D) {$Dij = $D[$i - $j];}
 			$R[$i] += ($Kj * $Dij);
-			print "K[$j] = $Kj. D[$i - $j] = $Dij.\n";
-			print "\t R[$i] = $R[$i].\n";
+			#print "K[$j] = $Kj. D[$i - $j] = $Dij.\n";
+			#print "\t R[$i] = $R[$i].\n";
 			#print "";
 		}
 	}
@@ -326,40 +326,60 @@ if (-e $infilename && -r $infilename)
 		open (OFH, '>', $outfilename) or die ('Could not open output file ' . $outfilename . '.\n');
 		
 		#do all the things to IFH
+		my ($start, $end, $z, $mz, $score, $delta, $seq, $scan, @row);
+		my $mode = 0;
 		while (<IFH>)
 		{
 			#do all the things to $_
-			if ($_ =~ m/^\d.+$/)	#as long as $_ has data
+			if ($_ =~ m/^prot_*+/) #header row
 			{
-				my ($start, $end, $z, $mz, $maxND, $maxD, $rt, $score, $delta, @distND, $seq, $title);
-				#match variables to $_
-				/(?:[^,]+,){6}(<mz>?[^,]+),(<z>?[^,]+),(?:[^,]+),(<delta>?[^,]+),(<start>?[^,]+),(<end>?[^,]+),(<score>?[^,]+),(?:[^,]+,)(<seq>?[^,]+),(?:[^,]+,)(<title>?[^,]+)/;
-				$start = \g{start};
-				$end = \g{end};
-				$z = \g{z};
-				$mz = \g{mz};
-				$score = \g{score};
-				$delta = \g{delta};
-				$seq = \g{seq};
-				$title = \g{title};
-				$title =~ /^.+?RT:(<rt>?\d+(?:\.\d+))/;
-				$rt = \g{rt};
-				#call pepinfo
-				&pepinfo($seq, \$maxND, \$maxD, \@distND);
-				#print output to ofh
-				print OFH ($start . '\t' . $end . '\t' . $z . '\t' . $mz . '\t' . $maxND . '\t' . $maxD . '\t' . $rt . '\t' . $score . '\t' . $delta . '\t' . @distND . '\n');
+				#assign locations to variables
+				$mode = 1;
+				#print DEBUG $_;
+				@row = split(/,/, $_);
+				for (my $i = 0; $i < scalar @row; $i++)
+				{
+					#ID fields
+					if ($row[$i] eq "pep_exp_mz") {$mz = $i;}
+					elsif ($row[$i] eq "pep_exp_z") {$z = $i;}
+					elsif ($row[$i] eq "pep_delta") {$delta = $i;}
+					elsif ($row[$i] eq "pep_score") {$score = $i;}
+					elsif ($row[$i] eq "pep_start") {$start = $i;}
+					elsif ($row[$i] eq "pep_end") {$end = $i;}
+					elsif ($row[$i] eq "pep_seq") {$seq = $i;}
+					elsif ($row[$i] eq "pep_scan_title\n") {$scan = $i;}
+					else {}
+				}
 			}
+			elsif ($_ =~ m/^\d.+$/ && $mode == 1)	#as long as $_ has data
+			{
+				my $rt;
+				@row = split(/,/, $_);
+				#call pepinfo
+				my @pepinfo = @{pepinfo($row[$seq], 2)};
+				if ($row[$scan] =~ /.*RT:(\d+(?:\.\d+)).*/) {$rt = $1;}
+				chomp($row[$scan]);
+				my $R = $row[$start] . '\t' . $row[$end] . '\t' . $row[$z] . '\t' . $row[$mz] . '\t' . $pepinfo[2] . '\t' . $pepinfo[3] . 't' . $rt . '\t' . $row[$score] . '\t' . $row[$delta] . '\t';
+				foreach (@{$pepinfo[1]})
+				{
+					$R = $R . $_ . "\t";
+				}
+				$R = $R . "\n";
+				#print output to ofh
+				print OFH $R;
+			}
+			else {$mode = 0;} #no more data to read
 		}	
 	}
 	else
 	{
-		if (!-w $outfilename) {die ("Output file $outfilename is not writeable.\n";)}
+		if (!-w $outfilename) {die "Output file $outfilename is not writeable.\n";}
 	}
 }
 else
 {
-	if (-e $infilename) {die ("Input file $infilename does not exist.\n";)}
-	elsif (-r $infilename) {die ("Input file $infilename is not readable.\n";)}
+	if (-e $infilename) {die "Input file $infilename does not exist.\n";}
+	elsif (-r $infilename) {die "Input file $infilename is not readable.\n";}
 	else {die "This should be unreachable.\n"}
 }
 close DEBUG;
