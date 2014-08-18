@@ -306,8 +306,8 @@ sub pepinfo
 	return \@R;
 }
 
-my $intype = ['Comma Seperated Values', '.csv'];
-my $outtype = ['Text Files', ['.txt', '.text']];
+my $intype = [['Comma Seperated Values', '.csv'], ['All Files', '*.*']];
+my $outtype = [['Text Files', '.txt'], ['All Files', '*.*']];
 my $infilename = "";
 my $outfilename = "";
 
@@ -318,7 +318,7 @@ if (-e $infilename && -r $infilename)
 {
 	print DEBUG "Input file is $infilename\n";
 	open (IFH, '<', $infilename) or die ('Could not open input file ' . $infilename . '.\n');
-	$outfilename = $mw->getSaveFile(-filetypes=>$outtype, -initialfile=>"spif");
+	$outfilename = $mw->getSaveFile(-filetypes=>$outtype, -initialfile=>"spif.txt");
 	if (-w $outfilename)
 	{
 		if ($outfilename eq "") {$outfilename = "spif.txt";}
@@ -326,8 +326,10 @@ if (-e $infilename && -r $infilename)
 		open (OFH, '>', $outfilename) or die ('Could not open output file ' . $outfilename . '.\n');
 		
 		#do all the things to IFH
-		my ($start, $end, $z, $mz, $score, $delta, $seq, $scan, @row);
+		my ($start, $end, $z, $mz, $score, $delta, $seq, $scan, @row, @AoR);
 		my $mode = 0;
+		my $max = 0;
+		#my $i = 0;
 		while (<IFH>)
 		{
 			#do all the things to $_
@@ -353,23 +355,41 @@ if (-e $infilename && -r $infilename)
 			}
 			elsif ($_ =~ m/^\d.+$/ && $mode == 1)	#as long as $_ has data
 			{
+				#print "Acquiring data row #$i.\n";
+				#$i++;
 				my $rt;
 				@row = split(/,/, $_);
 				#call pepinfo
 				my @pepinfo = @{pepinfo($row[$seq], 2)};
 				if ($row[$scan] =~ /.*RT:(\d+(?:\.\d+)).*/) {$rt = $1;}
 				chomp($row[$scan]);
-				my $R = $row[$start] . '\t' . $row[$end] . '\t' . $row[$z] . '\t' . $row[$mz] . '\t' . $pepinfo[2] . '\t' . $pepinfo[3] . 't' . $rt . '\t' . $row[$score] . '\t' . $row[$delta] . '\t';
+				my $R = $row[$start] . "\t" . $row[$end] . "\t" . $row[$z] . "\t" . $row[$mz] . "\t" . $pepinfo[2] . "\t" . $pepinfo[3] . "\t" . $rt . "\t" . $row[$score] . "\t" . $row[$delta] . "\t";
 				foreach (@{$pepinfo[1]})
 				{
 					$R = $R . $_ . "\t";
 				}
-				$R = $R . "\n";
-				#print output to ofh
-				print OFH $R;
+				my $columns = $R =~ tr/\t//;
+				if ($columns > $max) {$max = $columns;}
+				push @AoR, $R;
 			}
 			else {$mode = 0;} #no more data to read
-		}	
+		}
+		#$i = 0;
+		foreach (@AoR)
+		{
+			#print "Outputting row #$i.\n";
+			#$i++;
+			#pad each row to length
+			my $columns = $_ =~ tr/\t//;
+			for (my $i = 0; $i < ($max - $columns); $i++)
+			{
+				$_ = $_ . "0\t";
+			}
+			chop ($_);
+			$_ = $_ . "\n";
+			#print @AoR to output here:
+			print OFH $_;
+		}
 	}
 	else
 	{

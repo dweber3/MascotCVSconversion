@@ -327,8 +327,10 @@ if (-e $infilename && -r $infilename)
 	if (-w $outfilename)
 	{
 		#do all the things to ifh
-		my ($start, $end, $z, $mz, $score, $delta, $seq, $scan, @row);
+		my ($start, $end, $z, $mz, $score, $delta, $seq, $scan, @row, @AoR);
 		my $mode = 0;
+		my $max = 0;
+		#my $i = 0;
 		while (<IFH>)
 		{
 			#do all the things to $_
@@ -354,6 +356,8 @@ if (-e $infilename && -r $infilename)
 			}
 			elsif ($_ =~ m/^\d.+$/ && $mode == 1)	#as long as $_ has data
 			{
+				#print "Acquiring data row #$i.\n";
+				#$i++;
 				my $rt;
 				@row = split(/,/, $_);
 				#call pepinfo
@@ -365,12 +369,28 @@ if (-e $infilename && -r $infilename)
 				{
 					$R = $R . $_ . "\t";
 				}
-				$R = $R . "\n";
-				#print output to ofh
-				print OFH $R;
+				my $columns = $R =~ tr/\t//;
+				if ($columns > $max) {$max = $columns;}
+				push @AoR, $R;
 			}
 			else {$mode = 0;} #no more data to read
-		}	
+		}
+		#$i = 0;
+		foreach (@AoR)
+		{
+			#print "Outputting row #$i.\n";
+			#$i++;
+			#pad each row to length
+			my $columns = $_ =~ tr/\t//;
+			for (my $i = 0; $i < ($max - $columns); $i++)
+			{
+				$_ = $_ . "0\t";
+			}
+			chop ($_);
+			$_ = $_ . "\n";
+			#print @AoR to output here:
+			print OFH $_;
+		}
 	}
 	else {die "Output file $outfilename is not writeable.\n";}
 }
