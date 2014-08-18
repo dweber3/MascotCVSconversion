@@ -42,22 +42,14 @@ if (-e $infilename && -r $infilename)
 		#print DEBUG "Output file will be $outfilename\n";
 		open (my $ofh, '>', $outfilename) or die ('Could not open output file ' . $outfilename . '.\n');
 		
-		my (@start_end, @AoR, $RT, @row);
+		my (@start_end, @AoR, $RTl, $RTh, @row);
 		my $mode = 0;
-		my $hit = -1;
-		my $prot = -1;
-		my $mz = -1;
 		my $z = -1;
-		my $mr = -1;
-		my $delta = -1;
 		my $score = -1;
-		my $start = -1;
-		my $end = -1;
-		my $bef = -1;
 		my $seq = -1;
-		my $aft = -1;
 		my $scan = -1;
-		$RT = 0;
+		$RTl = 0;
+		$RTh = 0;
 
 		#possible modes:
 		#	0:	initial state
@@ -75,31 +67,24 @@ if (-e $infilename && -r $infilename)
 				for (my $i = 0; $i < scalar @row; $i++)
 				{
 					#ID fields
-					if ($row[$i] eq "prot_hit_num") {$hit = $i;}
-					elsif ($row[$i] eq "prot_acc") {$prot = $i;}
-					elsif ($row[$i] eq "pep_exp_mz") {$mz = $i;}
-					elsif ($row[$i] eq "pep_exp_z") {$z = $i;}
-					elsif ($row[$i] eq "pep_calc_mr") {$mr = $i;}
-					elsif ($row[$i] eq "pep_delta") {$delta = $i;}
+					if ($row[$i] eq "pep_exp_z") {$z = $i;}
 					elsif ($row[$i] eq "pep_score") {$score = $i;}
-					elsif ($row[$i] eq "pep_start") {$start = $i;}
-					elsif ($row[$i] eq "pep_end") {$end = $i;}
-					elsif ($row[$i] eq "pep_res_before") {$bef = $i;}
 					elsif ($row[$i] eq "pep_seq") {$seq = $i;}
-					elsif ($row[$i] eq "pep_res_after") {$aft = $i;}
 					elsif ($row[$i] eq "pep_scan_title\n") {$scan = $i;}
 					else {}
 				}
-				push @AoR, "prot_hit_num,prot_acc,pep_exp_mz,pep_exp_z,pep_calc_mr,pep_delta,pep_score,retention time,pep_res_before,pep_seq,pep_res_after,pep_scan_title\n";
+				push @AoR, "rt_start,rt_end,Charge,Sequence,Score,maxD_exchange,maxD_centroid\n";
 			}
 			elsif ($_ =~ /^\d.*/ && $mode == 1)
 			{
 				#body section
 				@row = split(/,/, $_);
 				#print "$row[16]\n";
-				if ($row[$scan] =~ /.*RT:(\d+(?:\.\d+)).*/) {$RT = $1;}
+				if ($row[$scan] =~ /.*RT:(\d+(?:\.\d+)).*/) {$RTl = $1;}
 				chomp($row[$scan]);
-				push @AoR, join ("", (join (',', ($row[$hit], $row[$prot], $row[$mz], "", $row[$z], $row[$mr], $row[$delta], $row[$score], $RT, $row[$bef], $row[$seq], $row[$aft], $row[$scan], " ", " ", " ", " " . $row[$start] . "-" . $row[$end])), "\n"));
+				$RTl = int ($RTl * 10) / 10;
+				$RTh = $RTl + .1;
+				push @AoR, join ("", (join (',', ($RTl, $RTh, $row[$z], $row[$seq], $row[$score], 0, 0)), "\n"));
 			}
 			else
 			{
