@@ -2,8 +2,10 @@ use strict;
 use warnings;
 use Math::BigFloat;
 
-my $S = 'MONOCATISACAT';
-my $X = 2;
+my $gui = 1;
+require Tk;
+if ($@) {$gui = 0;}
+print "Gui? " . ($gui? "Yes" : "No") . "\n";
 
 #print "Testing binopdf:\n";
 #my @X = (0..16);
@@ -12,16 +14,16 @@ my $X = 2;
 #my @R = @{binopdf(\@X, $N, $p)};
 #print "@R\n";
 
-my @R = @{pepinfo($S, $X)};
-print "\n\n\tResults:\n\n";
-print "Peptide mass is $R[0].\n";
-print "distND:\n";
-foreach (@{$R[1]})
-{
-	printf("%6f\t", $_);
-}
-print "\nmaxND = $R[2].\n";
-print "maxD = $R[3].\n";
+#my @R = @{pepinfo($S, $X)};
+#print "\n\n\tResults:\n\n";
+#print "Peptide mass is $R[0].\n";
+#print "distND:\n";
+#foreach (@{$R[1]})
+#{
+#	printf("%6f\t", $_);
+#}
+#print "\nmaxND = $R[2].\n";
+#print "maxD = $R[3].\n";
 
 sub pepinfo
 {
